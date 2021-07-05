@@ -706,6 +706,57 @@ class F16(BaseEnv):
 
         return F, M
 
+    def lin_mode(self, x_t, u_t):
+        # numerical computation of state-space model
+        dx0 = self.derivs(*x_t, u_t)
+
+        ptrb = 1e-9
+
+        N = 13  # state variables
+        M = 4  # input variables
+
+        dfdx = np.zeros((N, N))
+        for i in range(0, N):
+            ptrbvecx = np.zeros((N, 1))
+            ptrbvecx[i] = ptrb
+            dx = self.derivs(*(x_t + ptrbvecx), u_t)
+            dfdx[:, i] = (dx - dx0) / ptrb
+
+        dfdu = np.zeros((N, M))
+        for i in range(0, M):
+            ptrbvecu = np.zeros((M, 1))
+            ptrbvecu[i] = ptrb
+            dx = self.derivs(*x_t, (u_t + ptrbvecu))
+            dfdu[:, i] = (dx - dx0) / ptrb
+
+        Elon1 = np.zeros((4, N))
+        Elon1[0, 0] = 1  # VT
+        Elon1[1, 1] = 1  # alp
+        Elon1[2, 4] = 1  # theta
+        Elon1[3, 7] = 1  # q
+
+        Elon2 = np.zeros((2, M))
+        Elon2[0, 0] = 1  # delt
+        Elon2[1, 1] = 1  # dele
+
+        Elat1 = np.zeros((4, N))
+        Elat1[0, 2] = 1  # bet
+        Elat1[1, 3] = 1  # phi
+        Elat1[2, 6] = 1  # p
+        Elat1[3, 8] = 1  # r
+
+        Elat2 = np.zeros((2, M))
+        Elat2[0, 2] = 1  # dela
+        Elat2[1, 3] = 1  # delr
+
+        Alon = Elon1.dot(dfdx).dot(Elon1.T)
+        Blon = Elon1.dot(dfdu).dot(Elon2.T)
+
+        Alat = Elat1.dot(dfdx).dot(Elat1.T)
+        Blat = Elat1.dot(dfdu).dot(Elat2.T)
+
+        return Alon, Blon, Alat, Blat
+
     '''
     너무 하기 싫자나ㅏ~~~
     '''
@@ -810,7 +861,6 @@ if __name__ == "__main__":
     euler = np.vstack((0., 2.39110108e-1, 0.))
     omega = np.vstack((0., 0., 0.))
     pos = np.vstack((0., 0., 0.))
-    # POW = 6.41323000e+1
     POW = 6.41323e+1
     u = np.vstack((0.835, 0.43633231, -0.37524579, 0.52359878))
     system = F16(long, euler, omega, pos, POW)
