@@ -14,10 +14,16 @@ class Env(BaseEnv):
         self.x0 = np.vstack((long, euler, omega, pos, POW))
         self.plant = F16(long, euler, omega, pos, POW)
 
-        self.A, self.B, *_ = self.plant.lin_mode(self.x0, u)
+        A, B, *_ = self.plant.lin_mode(self.x0, u)
         Q = np.diag((1, 100, 10, 100))
         R = np.diag((1, 100))
-        self.K = clqr(self.A, self.B, Q, R)
+        self.K = clqr(A, B, Q, R)
+        # lqi
+        # Aaug, Baug = lqi_design(A, B)
+        # Qi = np.diag((1, 100, 10, 100, 1, 100))
+        # Ri = np.diag((1, 100))
+        # self.K = clqr(Aaug, Baug, Qi, Ri)
+        # self.e = BaseSystem(np.vstack((0, 0)))
 
     def step(self):
         *_, done = self.update()
@@ -35,10 +41,17 @@ class Env(BaseEnv):
 
     def set_dot(self, t):
         x = self.plant.state
-        xlon = np.vstack((x[0], x[1], x[4], x[7]))
         x0 = self.x0
+        xlon = np.vstack((x[0], x[1], x[4], x[7]))
         x0lon = np.vstack((x0[0], x0[1], x0[4], x0[7]))
-        u = -self.K.dot(xlon - x0lon)
+        diff = np.vstack((xlon - x0lon))
+
+        # lqi
+        # self.e.dot = np.vstack((x[0] - x0[0],
+        #                         (x[4] - x0[4]) - (x[1] - x0[1])))
+        # diff = np.vstack((diff, self.e.state))
+
+        u = -self.K.dot(diff)
         u[0] = np.clip(u[0], 0, 1)
         u[1] = np.clip(u[1], self.plant.control_limits["dele"].min(),
                        self.plant.control_limits["dele"].max())
@@ -119,5 +132,5 @@ if __name__ == "__main__":
     pos = np.vstack((0., 0., 0.))
     POW = 6.41323e+1
     u = np.vstack((0.835, 0.43633231, -0.37524579, 0.52359878))
-    # run(long, euler, omega, pos, POW, u)
+    run(long, euler, omega, pos, POW, u)
     exp1_plot()
