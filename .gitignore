@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/macos,python,vim
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,vim
 
+*.h5
+
 ### macOS ###
 # General
 .DS_Store
