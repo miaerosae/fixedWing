@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from fw.model.aircraft import F16
+from fw.model.fixedWing import F16
 from fw.agents.lqr import clqr, lqi_design
 
 from fym.core import BaseEnv, BaseSystem
@@ -13,11 +13,12 @@ class Env(BaseEnv):
         super().__init__(dt=0.01, max_t=10)
         self.x0 = np.vstack((long, euler, omega, pos, POW))
         self.plant = F16(long, euler, omega, pos, POW)
+        self.u = u
 
-        A, B, *_ = self.plant.lin_mode(self.x0, u)
-        Q = np.diag((1, 100, 10, 100))
-        R = np.diag((1, 100))
-        self.K = clqr(A, B, Q, R)
+        # A, B, *_ = self.plant.lin_mode(self.x0, u)
+        # Q = np.diag((1, 100, 10, 100))
+        # R = np.diag((1, 100))
+        # self.K = clqr(A, B, Q, R)
         # lqi
         # Aaug, Baug = lqi_design(A, B)
         # Qi = np.diag((1, 100, 10, 100, 1, 100))
@@ -51,14 +52,15 @@ class Env(BaseEnv):
         #                         (x[4] - x0[4]) - (x[1] - x0[1])))
         # diff = np.vstack((diff, self.e.state))
 
-        u = -self.K.dot(diff)
-        u[0] = np.clip(u[0], 0, 1)
-        u[1] = np.clip(u[1], self.plant.control_limits["dele"].min(),
-                       self.plant.control_limits["dele"].max())
-        u_plant = np.vstack((u[0], u[1], 0, 0))
-        self.plant.set_dot(t, u_plant)
+        # u = -self.K.dot(diff)
+        # u[0] = np.clip(u[0], 0, 1)
+        # u[1] = np.clip(u[1], self.plant.control_limits["dele"].min(),
+        #                self.plant.control_limits["dele"].max())
+        # u_plant = np.vstack((u[0], u[1], 0, 0))
+        # self.plant.set_dot(t, u_plant)
+        self.plant.set_dot(t, self.u)
 
-        return dict(t=t, x=self.plant.observe_dict(), u=u)
+        return dict(t=t, x=self.plant.observe_dict())
 
 
 def run(long, euler, omega, pos, POW, u):
@@ -114,23 +116,23 @@ def exp1_plot():
     plt.tight_layout()
 
     # input
-    plt.figure()
+    # plt.figure()
 
-    plt.plot(data["t"], data["u"][:, 0, 0], label="delt")
-    plt.plot(data["t"], data["u"][:, 1, 0], label="dele")
-    plt.legend()
+    # plt.plot(data["t"], data["u"][:, 0, 0], label="delt")
+    # plt.plot(data["t"], data["u"][:, 1, 0], label="dele")
+    # plt.legend()
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     plt.show()
 
 
 if __name__ == "__main__":
-    long = np.vstack((502., 2.39110108e-1, 0.))
-    euler = np.vstack((0., 2.39110108e-1, 0.))
+    long = np.vstack((502, 5.05807418e-02, 7.85459681e-07))
+    euler = np.vstack((0., 5.05807418e-02, 0.))
     omega = np.vstack((0., 0., 0.))
     pos = np.vstack((0., 0., 0.))
-    POW = 6.41323e+1
-    u = np.vstack((0.835, 0.43633231, -0.37524579, 0.52359878))
+    POW = 1.00031243e+1
+    u = np.vstack((0.154036408, -1.21242062e-2, -2.91493958e-7, 1.86731213e-6))
     run(long, euler, omega, pos, POW, u)
     exp1_plot()

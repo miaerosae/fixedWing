@@ -555,7 +555,8 @@ class F16(BaseEnv):
         _alp, _bet = np.rad2deg(long[1:])
         phi, theta, psi = euler
         p, q, r = omega
-        _delt, _dele, _dela, _delr = np.rad2deg(u)
+        delt = u[0]
+        _dele, _dela, _delr = np.rad2deg(u[1:])
 
         # Standard Atmosphere Model
         alt = pos[2]
@@ -607,7 +608,7 @@ class F16(BaseEnv):
         Na = CNT * qbar * S * b
 
         # Thrust Force & Engine Moment
-        CPOW = self.TGEAR(_delt)  # throttle gearing
+        CPOW = self.TGEAR(delt)  # throttle gearing
         dPOW = self.PDOT(POW, CPOW)
         T = self.THRUST(POW, alt, Mach)
         Le = q * en_mz - r * en_my
@@ -775,10 +776,10 @@ class F16(BaseEnv):
         bounds = (
             self.control_limits["delt"],
             self.control_limits["dele"],
-            np.deg2rad((self.coords["alp"].min(), self.coords["alp"].max())),
+            (np.deg2rad(-10), np.deg2rad(45)),
             self.control_limits["dela"],
             self.control_limits["delr"],
-            np.deg2rad((self.coords["bet2"].min(), self.coords["bet2"].max())),
+            (np.deg2rad(-30), np.deg2rad(30))
         )
         result = scipy.optimize.minimize(
             self._trim_cost, z0, args=(fixed,),
@@ -912,77 +913,63 @@ class F16lon(BaseEnv):
                   -28.2, -29.0, -29.8, -38.3, -35.3],
                  [-7.21, -.540, -5.23, -5.26, -6.11, -6.64, -5.69,
                   -6.00, -6.20, -6.40, -6.60, -6.00]],
-        "CX": [[-.099, -.081, -.081, -.063, -.025, .044, .097,
-                .113, .145, .167, .174, .166],
-               [-.048, -.038, -.040, -.021, .016, .083, .127,
-                .137, .162, .177, .179, .167],
-               [-.022, -.020, -.021, -.004, .032, .094, .128,
-                .130, .154, .161, .155, .138],
-               [-.040, -.038, -.039, -.025, .006, .062, .087,
-                .085, .100, .110, .104, .091],
-               [-.083, -.073, -.076, -.072, -.046, .012, .024,
-                .025, .043, .053, .047, .040]],
-        "CZ": [.770, .241, -.100, -.416, -.731, -1.053,
-               -1.366, -1.646, -1.917, -2.120, -2.248, -2.229],
-        "CM": [[.205, .168, .186, .196, .213, .251, .245,
-                .248, .252, .231, .298, .192],
-               [.081, .077, .107, .110, .110, .141, .127,
-                .119, .133, .108, .081, .093],
-               [-.046, -.020, -.009, -.005, -.006, .010, .006,
-                -.001, .014, .000, -.013, .032],
-               [-.174, -.145, -.121, -.127, -.129, -.102, -.097,
-                -.113, -.087, -.084, -.069, -.006],
-               [-.259, -.202, -.184, -.193, -.199, -.150, -.160,
-                -.167, -.104, -.076, -.041, -.005]]
+        "CX": [[-.099, -.099, -.081, -.081, -.063, -.025, .044, .097,
+                .113, .145, .167, .174, .166, .166],
+               [-.099, -.099, -.081, -.081, -.063, -.025, .044, .097,
+                .113, .145, .167, .174, .166, .166],
+               [-.048, -.048, -.038, -.040, -.021, .016, .083, .127,
+                .137, .162, .177, .179, .167, .167],
+               [-.022, -.022, -.020, -.021, -.004, .032, .094, .128,
+                .130, .154, .161, .155, .138, .138],
+               [-.040, -.040, -.038, -.039, -.025, .006, .062, .087,
+                .085, .100, .110, .104, .091, .091],
+               [-.083, -.083, -.073, -.076, -.072, -.046, .012, .024,
+                .025, .043, .053, .047, .040, .040],
+               [-.083, -.083, -.073, -.076, -.072, -.046, .012, .024,
+                .025, .043, .053, .047, .040, .040]],
+        "CZ": [.770, .770, .241, -.100, -.416, -.731, -1.053,
+               -1.366, -1.646, -1.917, -2.120, -2.248, -2.229, -2.229],
+        "CM": [[.205, .205, .168, .186, .196, .213, .251, .245,
+                .248, .252, .231, .298, .192, .192],
+               [.205, .205, .168, .186, .196, .213, .251, .245,
+                .248, .252, .231, .298, .192, .192],
+               [.081, .081, .077, .107, .110, .110, .141, .127,
+                .119, .133, .108, .081, .093, .093],
+               [-.046, -.046, -.020, -.009, -.005, -.006, .010, .006,
+                -.001, .014, .000, -.013, .032, .032],
+               [-.174, -.174, -.145, -.121, -.127, -.129, -.102, -.097,
+                -.113, -.087, -.084, -.069, -.006, -.006],
+               [-.259, -.259, -.202, -.184, -.193, -.199, -.150, -.160,
+                -.167, -.104, -.076, -.041, -.005, -.005],
+               [-.259, -.259, -.202, -.184, -.193, -.199, -.150, -.160,
+                -.167, -.104, -.076, -.041, -.005, -.005]],
     }
 
     coords = {
-        "alp": np.linspace(-10., 45., 12),
-        "dele": np.linspace(-25., 25., 5),
+        "alp": np.array([-1000, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45,
+                         1000]),
+        "dele": np.array([-10000, -24, -12, 0, 12, 24, 10000]),
+        "h": np.array([-10, 0, 10000, 20000, 30000, 40000, 50000, 1000000]),
+        "M": np.array([-10, 0, -.2, 0.4, 0.6, 0.8, 1.0, 10]),
+        "alp_": np.linspace(-10, 45, 12),
         "d": np.linspace(1., 3., 3),
-        "h": np.linspace(0, 50000, 6),
-        "M": np.linspace(0, 1, 6)
     }
 
-    def __init__(self, lon):
+    def __init__(self, lon=None):
         # lon = [VT, gamma, h, alp, q]
+        if lon is None:
+            lon, *_ = self.get_trim()
+
         super().__init__()
         self.lon = BaseSystem(lon)
-
-    def damp(self, alp):
-        A = self.polycoeffs["damp"]
-
-        calp = self.coords["alp"]
-        cd = self.coords["d"]
-        f = interpolate.interp2d(calp, cd, A)
-        D = np.zeros((3,))
-        for i in range(3):
-            D[i] = f(alp, i+1)
-        return D
-
-    def CX(self, alp, dele):  # x-axis aerodynamic force coeff.
-        A = self.polycoeffs["CX"]
-
-        calp = self.coords["alp"]
-        cdele = self.coords["dele"]
-        f = interpolate.interp2d(calp, cdele, A)
-        return f(alp, dele)
-
-    def CZ(self, alp, bet, dele):  # z-axis force coeff
-        A = self.polycoeffs["CZ"]
-
-        calp = self.coords["alp"]
-        f = interpolate.interp1d(calp, A, bounds_error=False)
-        CZ = f(alp) * (1 - (bet/57.3)**2) - .19 * (dele/25.)
-        return CZ
-
-    def CM(self, alp, dele):  # pitching moment coeff
-        A = self.polycoeffs["CM"]
-
-        calp = self.coords["alp"]
-        cdele = self.coords["dele"]
-        f = interpolate.interp2d(calp, cdele, A)
-        return f(alp, dele)
+        # coefficient interpolation
+        self.damp = interpolate.interp2d(self.coords["alp_"], self.coords["d"],
+                                         self.polycoeffs["damp"])
+        self.CX = interpolate.interp2d(self.coords["alp"], self.coords["dele"],
+                                       self.polycoeffs["CX"])
+        self.CZ = interpolate.interp1d(self.coords["alp"], self.polycoeffs["CZ"])
+        self.CM = interpolate.interp2d(self.coords["alp"], self.coords["dele"],
+                                       self.polycoeffs["CM"])
 
     def deriv(self, lon, u):
         # x = [VT, gamma, h, alp, q]
@@ -994,12 +981,12 @@ class F16lon(BaseEnv):
         VT, gamma, h, alp, q = lon
         _alp = np.rad2deg(lon[3])
         _bet = 0.
-        delt, dele = u
+        delt, _dele = u[0], np.rad2deg(u[1])
 
         # look-up table and component buildup
-        CXT = self.CX(_alp, dele)
-        CZT = self.CZ(_alp, _bet, dele)
-        CMT = self.CM(_alp, dele)
+        CXT = self.CX(_alp, _dele)
+        CZT = self.CZ(_alp, _bet, _dele)
+        CMT = self.CM(_alp, _dele)
 
         # damping derivatives
         x_cgr = self.x_cgr
@@ -1032,6 +1019,37 @@ class F16lon(BaseEnv):
     def set_dot(self, t, u):
         states = self.observe_list()
         self.lon.dot = self.deriv(*states, u)
+
+    def _trim_cost(self, z, fixed):
+        x, u = self._trim_convert(z, fixed)
+        dxs = self.deriv(x, u)
+        weight = np.diag([1, 1, 1, 1, 100])
+        return dxs.T.dot(weight).dot(dxs)[0][0]
+
+    def _trim_convert(self, z, fixed):
+        V, h = fixed
+        alp, delt, dele = z
+        q, gamma = 0, 0
+
+        x = np.vstack([V, gamma, h, alp, q])
+        u = np.vstack([delt, dele])
+        return x, u
+
+    def get_trim(self, z={"alp": 0.1, "delt": 0.19, "dele": 0},
+                 fixed={"V": 20, "h": 300}, method="SLSQP",
+                 options={"disp": False, "ftol": 1e-10}, verbose=False):
+        z = list(z.values())
+        fixed = list(fixed.values())
+        bounds = (
+            (np.deg2rad(-10), np.deg2rad(45)),
+            self.control_limits["delt"],
+            self.control_limits["dele"]
+        )
+        result = scipy.optimize.minimize(
+            self._trim_cost, z, args=(fixed,),
+            bounds=bounds, method=method, options=options)
+        x, u = self._trim_convert(result.x, fixed)
+        return x, u
 
     def lin_mode_lon(self, A, B):
         # get A, B matrix from F16, and transform to longitudinal A, B
@@ -1084,24 +1102,16 @@ class F16lon(BaseEnv):
 
 
 if __name__ == "__main__":
-    # long = np.vstack((1.530096e+02, 3.600000e-02, -4.000000e-09))
-    # euler = np.vstack((0., 3.600000e-02, 0.))
-    # omega = np.vstack((0., 0., 0.))
-    # pos = np.vstack((0., 0., 0.))
-    # POW = 8.99419
-    # u = np.vstack((1.38500000e-01, -1.32435584e-02, -2.09439510e-09, 1.08210414e-08))
-    long = np.vstack((502, 5.05804057e-02, -1.11379043e-07))
-    euler = np.vstack((0., 5.05804057e-02, 0.))
+    long = np.vstack((502, 5.05807418e-02, 7.85459681e-07))
+    euler = np.vstack((0., 5.05807418e-02, 0.))
     omega = np.vstack((0., 0., 0.))
     pos = np.vstack((0., 0., 0.))
-    POW = 1.00030944e+1
-    u = np.vstack((0.154035947, -1.21242686e-2, -3.82470052e-8, -7.60687351e-8))
+    POW = 1.00031243e+1
+    u = np.vstack((0.154036408, -1.21242062e-2, -2.91493958e-7, 1.86731213e-6))
     system = F16(long, euler, omega, pos, POW)
 
     # f16 lon
-    # system1 = F16lon(np.vstack((502., 0., 0., 2.39110108e-1, 0.)))
-    # u = np.vstack((0.835, 0.43633231))
+    # system1 = F16lon()
 
-    system.set_dot(t=0, u=u)
-    print(repr(system))
-    # print(system.get_trim())
+    # print(repr(system))
+    print(system.get_trim())
